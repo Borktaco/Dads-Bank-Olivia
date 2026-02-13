@@ -1,594 +1,251 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dad's Bank for Olivia</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<script>
+    const STORAGE_KEY = 'dadsBankOlivia_v1';
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #d4c5b0;
-            background-image: url('https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/37010aca-6d47-42d1-8b30-2f8e23200fff');
-            background-size: 300px 300px;
-            background-repeat: repeat;
-            min-height: 100vh;
-            padding: 20px 15px;
-            overflow-x: hidden;
-        }
+    let checkingBalance = 110.79;
+    let btcAmount = 0.00357743;
+    let btcPrice = 0;
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+    const btcMetaText = document.getElementById('btcMetaText');
 
-        .header {
-            background: rgba(255, 107, 157, 0.85);
-            backdrop-filter: blur(4px);
-            border-radius: 20px;
-            padding: 25px 20px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            margin-bottom: 20px;
-        }
+    let transactions = [
+        {date: '1/13', desc: 'Robux', amount: -2.00, balance: 110.79},
+        {date: '1/12', desc: 'Robux', amount: -1.00, balance: 112.79},
+        {date: '1/12', desc: 'Claw machine', amount: -20.00, balance: 113.79},
+        {date: '1/5', desc: 'Nails', amount: -9.77, balance: 133.79},
+        {date: '1/5', desc: '5 below', amount: -5.44, balance: 143.56},
+        {date: '1/1', desc: 'Sweater', amount: -10.88, balance: 149.00},
+        {date: '12/27', desc: 'Claw machine', amount: -37.99, balance: 159.88},
+        {date: '12/26', desc: 'Boba', amount: -7.99, balance: 197.87},
+        {date: '12/25', desc: "G'ma Carla Christmas", amount: 100.00, balance: 205.86},
+        {date: '12/25', desc: 'Christmas', amount: 60.00, balance: 105.86},
+        {date: '11/13', desc: 'Birthday', amount: 45.00, balance: 45.86},
+        {date: '10/26', desc: 'Buy bitcoin', amount: -90.00, balance: 0.86},
+        {date: '10/22', desc: 'Yarn and fiber', amount: -24.94, balance: 90.86},
+        {date: '10/19', desc: 'Grades', amount: 50.00, balance: 115.80},
+        {date: '10/16', desc: 'Babysitting', amount: 20.00, balance: 65.80},
+        {date: '10/8', desc: 'Goodwill', amount: -43.94, balance: 45.80},
+        {date: '10/2', desc: 'Babysitting', amount: 20.00, balance: 89.74},
+        {date: '9/25', desc: 'Roller skates', amount: -49.99, balance: 69.74},
+        {date: '8/10', desc: 'Mom gave money for crochet', amount: 40.00, balance: 119.73},
+        {date: '8/6', desc: 'Babysitting', amount: 25.00, balance: 79.73},
+        {date: '7/28', desc: 'Gambling money', amount: -5.00, balance: 54.73},
+        {date: '7/28', desc: 'Gambling money', amount: 20.00, balance: 59.73},
+        {date: '7/28', desc: 'Work money', amount: 25.00, balance: 39.73},
+        {date: '7/24', desc: 'Legos', amount: -9.99, balance: 14.73},
+        {date: '7/22', desc: 'Bitcoin', amount: -25.00, balance: 24.72},
+        {date: '7/2', desc: 'Shein', amount: -25.81, balance: 49.72},
+        {date: '7/13', desc: 'Webtoons', amount: -1.99, balance: 75.53},
+        {date: '7/1', desc: 'Gambling money', amount: 18.00, balance: 77.52},
+        {date: '7/9', desc: '5 below purchase', amount: -10.76, balance: 59.52},
+        {date: '7/7', desc: 'Random vacation Deposit', amount: 18.00, balance: 70.28},
+        {date: '6/28', desc: 'Random money found', amount: 5.00, balance: 52.28},
+        {date: '6/23', desc: 'Bitcoin fee', amount: -1.69, balance: 47.28},
+        {date: '6/23', desc: 'Money as gift', amount: 20.00, balance: 48.97},
+        {date: '6/14', desc: 'Item Sold on E-Bay', amount: 13.10, balance: 28.97},
+        {date: '6/14', desc: 'Deposit into Savings', amount: -50.00, balance: 15.87},
+        {date: '6/14', desc: 'Murder Mystery Game', amount: -23.13, balance: 65.87},
+        {date: '6/14', desc: 'Deposit', amount: 89.00, balance: 89.00}
+    ];
 
-        .header h1 {
-            color: white;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    function saveState() {
+        const state = {
+            checkingBalance,
+            btcAmount,
+            btcPrice,
+            transactions
+        };
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+            console.warn('Could not save state', e);
         }
+    }
 
-        .header .subtitle {
-            color: rgba(255,255,255,0.9);
-            font-size: 14px;
-            font-weight: 500;
-        }
+    function loadState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const state = JSON.parse(raw);
 
-        .balance-card,
-        .input-section,
-        .history-section {
-            background: rgba(255, 255, 255, 0.76); /* slightly more transparent so ducks show */
-            backdrop-filter: blur(6px);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .history-section {
-            margin-bottom: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .balance-header {
-            font-size: 14px;
-            color: #666;
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .balance-amount {
-            font-size: 36px;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-
-        .balance-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 15px;
-        }
-
-        .balance-item {
-            background: rgba(102, 126, 234, 0.82);
-            padding: 15px;
-            border-radius: 15px;
-            color: white;
-        }
-
-        .balance-item.btc {
-            background: rgba(240, 147, 251, 0.82);
-        }
-
-        .balance-label {
-            font-size: 11px;
-            opacity: 0.9;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .balance-value {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s;
-            background: #f8f9fa;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-        }
-
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .btn {
-            padding: 18px;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-add {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .btn-spend {
-            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
-            color: white;
-        }
-
-        .btn:active {
-            transform: scale(0.95);
-        }
-
-        .bitcoin-section {
-            background: rgba(255, 216, 155, 0.80);
-            backdrop-filter: blur(4px);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            color: white;
-        }
-
-        .bitcoin-header {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .bitcoin-grid {
-            display: grid;
-            gap: 10px;
-        }
-
-        .bitcoin-item {
-            background: rgba(255,255,255,0.2);
-            padding: 12px 15px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .bitcoin-item label {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .bitcoin-item input {
-            width: 150px;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            text-align: right;
-            background: white;
-            color: #2c3e50;
-        }
-
-        .btc-meta {
-            font-size: 11px;
-            margin-top: 8px;
-            opacity: 0.9;
-        }
-
-        .history-header {
-            font-size: 16px;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        .history-left {
-            flex: 1;
-        }
-
-        .history-date {
-            font-size: 11px;
-            color: #999;
-            font-weight: 600;
-        }
-
-        .history-desc {
-            font-size: 14px;
-            color: #2c3e50;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .history-right {
-            text-align: right;
-        }
-
-        .history-amount {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        .history-amount.positive {
-            color: #11998e;
-        }
-
-        .history-amount.negative {
-            color: #ee0979;
-        }
-
-        .history-balance {
-            font-size: 11px;
-            color: #999;
-            font-weight: 600;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            font-weight: 600;
-            z-index: 1000;
-            display: none;
-        }
-
-        .notification.show {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateX(-50%) translateY(-20px);
-                opacity: 0;
+            if (typeof state.checkingBalance === 'number') {
+                checkingBalance = state.checkingBalance;
             }
-            to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
+            if (typeof state.btcAmount === 'number') {
+                btcAmount = state.btcAmount;
+                document.getElementById('btcAmount').value = btcAmount;
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Dad's Bank</h1>
-            <div class="subtitle">for Olivia</div>
-        </div>
-
-        <div class="balance-card">
-            <div class="balance-header">Total Portfolio</div>
-            <div class="balance-amount" id="totalBalance">$0.00</div>
-
-            <div class="balance-grid">
-                <div class="balance-item">
-                    <div class="balance-label">Checking</div>
-                    <div class="balance-value" id="checkingBalance">$0.00</div>
-                </div>
-                <div class="balance-item btc">
-                    <div class="balance-label">Bitcoin Value</div>
-                    <div class="balance-value" id="bitcoinBalance">$0.00</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="input-section">
-            <div class="input-group">
-                <label>Amount</label>
-                <input type="number" id="amountInput" placeholder="0.00" step="0.01" inputmode="decimal">
-            </div>
-            <div class="input-group">
-                <label>Description</label>
-                <input type="text" id="descInput" placeholder="What's this for?">
-            </div>
-            <div class="button-group">
-                <button class="btn btn-add" onclick="addMoney()">Add Money</button>
-                <button class="btn btn-spend" onclick="spendMoney()">Spend Money</button>
-            </div>
-        </div>
-
-        <div class="bitcoin-section">
-            <div class="bitcoin-header">Bitcoin Tracker</div>
-            <div class="bitcoin-grid">
-                <div class="bitcoin-item">
-                    <label>Bitcoin Amount</label>
-                    <input type="number" id="btcAmount" value="0.00357743" step="0.00000001" onchange="updateBitcoinFromInputs()" inputmode="decimal">
-                </div>
-                <div class="bitcoin-item">
-                    <label>BTC Price (USD)</label>
-                    <input type="number" id="btcPrice" value="0" step="0.01" onchange="updateBitcoinFromInputs()" inputmode="decimal">
-                </div>
-            </div>
-            <div class="btc-meta" id="btcMetaText"></div>
-        </div>
-
-        <div class="history-section">
-            <div class="history-header">Transaction History</div>
-            <div id="historyList"></div>
-        </div>
-    </div>
-
-    <div class="notification" id="notification"></div>
-
-    <script>
-        let checkingBalance = 110.79;
-        let btcAmount = 0.00357743;
-        let btcPrice = 0;
-
-        const btcMetaText = document.getElementById('btcMetaText');
-
-        const transactions = [
-            {date: '1/13', desc: 'Robux', amount: -2.00, balance: 110.79},
-            {date: '1/12', desc: 'Robux', amount: -1.00, balance: 112.79},
-            {date: '1/12', desc: 'Claw machine', amount: -20.00, balance: 113.79},
-            {date: '1/5', desc: 'Nails', amount: -9.77, balance: 133.79},
-            {date: '1/5', desc: '5 below', amount: -5.44, balance: 143.56},
-            {date: '1/1', desc: 'Sweater', amount: -10.88, balance: 149.00},
-            {date: '12/27', desc: 'Claw machine', amount: -37.99, balance: 159.88},
-            {date: '12/26', desc: 'Boba', amount: -7.99, balance: 197.87},
-            {date: '12/25', desc: "G'ma Carla Christmas", amount: 100.00, balance: 205.86},
-            {date: '12/25', desc: 'Christmas', amount: 60.00, balance: 105.86},
-            {date: '11/13', desc: 'Birthday', amount: 45.00, balance: 45.86},
-            {date: '10/26', desc: 'Buy bitcoin', amount: -90.00, balance: 0.86},
-            {date: '10/22', desc: 'Yarn and fiber', amount: -24.94, balance: 90.86},
-            {date: '10/19', desc: 'Grades', amount: 50.00, balance: 115.80},
-            {date: '10/16', desc: 'Babysitting', amount: 20.00, balance: 65.80},
-            {date: '10/8', desc: 'Goodwill', amount: -43.94, balance: 45.80},
-            {date: '10/2', desc: 'Babysitting', amount: 20.00, balance: 89.74},
-            {date: '9/25', desc: 'Roller skates', amount: -49.99, balance: 69.74},
-            {date: '8/10', desc: 'Mom gave money for crochet', amount: 40.00, balance: 119.73},
-            {date: '8/6', desc: 'Babysitting', amount: 25.00, balance: 79.73},
-            {date: '7/28', desc: 'Gambling money', amount: -5.00, balance: 54.73},
-            {date: '7/28', desc: 'Gambling money', amount: 20.00, balance: 59.73},
-            {date: '7/28', desc: 'Work money', amount: 25.00, balance: 39.73},
-            {date: '7/24', desc: 'Legos', amount: -9.99, balance: 14.73},
-            {date: '7/22', desc: 'Bitcoin', amount: -25.00, balance: 24.72},
-            {date: '7/2', desc: 'Shein', amount: -25.81, balance: 49.72},
-            {date: '7/13', desc: 'Webtoons', amount: -1.99, balance: 75.53},
-            {date: '7/1', desc: 'Gambling money', amount: 18.00, balance: 77.52},
-            {date: '7/9', desc: '5 below purchase', amount: -10.76, balance: 59.52},
-            {date: '7/7', desc: 'Random vacation Deposit', amount: 18.00, balance: 70.28},
-            {date: '6/28', desc: 'Random money found', amount: 5.00, balance: 52.28},
-            {date: '6/23', desc: 'Bitcoin fee', amount: -1.69, balance: 47.28},
-            {date: '6/23', desc: 'Money as gift', amount: 20.00, balance: 48.97},
-            {date: '6/14', desc: 'Item Sold on E-Bay', amount: 13.10, balance: 28.97},
-            {date: '6/14', desc: 'Deposit into Savings', amount: -50.00, balance: 15.87},
-            {date: '6/14', desc: 'Murder Mystery Game', amount: -23.13, balance: 65.87},
-            {date: '6/14', desc: 'Deposit', amount: 89.00, balance: 89.00}
-        ];
-
-        function formatMoney(amount) {
-            return '$' + Math.abs(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-        }
-
-        function updateDisplay() {
-            const btcValue = btcAmount * btcPrice;
-            const total = checkingBalance + btcValue;
-
-            document.getElementById('checkingBalance').textContent = formatMoney(checkingBalance);
-            document.getElementById('bitcoinBalance').textContent = isNaN(btcValue) ? '$0.00' : formatMoney(btcValue);
-            document.getElementById('totalBalance').textContent = isNaN(total) ? '$0.00' : formatMoney(total);
-        }
-
-        function updateBitcoinFromInputs() {
-            btcAmount = parseFloat(document.getElementById('btcAmount').value) || 0;
-            btcPrice  = parseFloat(document.getElementById('btcPrice').value) || 0;
-            updateDisplay();
-        }
-
-        async function fetchBtcPrice() {
-            try {
-                const res = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
-                const data = await res.json();
-                const price = parseFloat(data.data.amount);
-                if (!isNaN(price)) {
-                    btcPrice = price;
-                    document.getElementById('btcPrice').value = price.toFixed(2);
-                    const now = new Date();
-                    btcMetaText.textContent = 'Live BTC price: ' + formatMoney(price) + ' • Updated ' + now.toLocaleTimeString();
-                    updateDisplay();
-                }
-            } catch (e) {
-                btcMetaText.textContent = 'Could not refresh BTC price right now.';
+            if (typeof state.btcPrice === 'number') {
+                btcPrice = state.btcPrice;
+                document.getElementById('btcPrice').value = btcPrice.toFixed(2);
             }
-        }
-
-        function showNotification(message) {
-            const notif = document.getElementById('notification');
-            notif.textContent = message;
-            notif.classList.add('show');
-            setTimeout(() => {
-                notif.classList.remove('show');
-            }, 2000);
-        }
-
-        function getAmountInput() {
-            const raw = document.getElementById('amountInput').value;
-            const amount = parseFloat(raw);
-            if (isNaN(amount)) return null;
-            return amount;
-        }
-
-        function addMoney() {
-            const amount = getAmountInput();
-            const desc = document.getElementById('descInput').value.trim();
-
-            if (amount === null || amount <= 0) {
-                showNotification('Please enter a valid amount');
-                return;
+            if (Array.isArray(state.transactions) && state.transactions.length) {
+                transactions = state.transactions;
             }
-            if (!desc) {
-                showNotification('Please enter a description');
-                return;
-            }
-
-            checkingBalance += amount;
-
-            const today = new Date();
-            const dateStr = (today.getMonth() + 1) + '/' + today.getDate();
-
-            transactions.unshift({
-                date: dateStr,
-                desc: desc,
-                amount: amount, // positive for add
-                balance: checkingBalance
-            });
-
-            updateDisplay();
-            renderHistory();
-
-            document.getElementById('amountInput').value = '';
-            document.getElementById('descInput').value = '';
-
-            showNotification('Money added! +' + formatMoney(amount));
+        } catch (e) {
+            console.warn('Could not load state', e);
         }
+    }
 
-        function spendMoney() {
-            const amount = getAmountInput();
-            const desc = document.getElementById('descInput').value.trim();
+    function formatMoney(amount) {
+        return '$' + Math.abs(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
 
-            if (amount === null || amount <= 0) {
-                showNotification('Please enter a valid amount');
-                return;
-            }
-            if (!desc) {
-                showNotification('Please enter a description');
-                return;
-            }
+    function updateDisplay() {
+        const btcValue = btcAmount * btcPrice;
+        const total = checkingBalance + btcValue;
 
-            if (amount > checkingBalance) {
-                showNotification('Not enough money in checking!');
-                return;
-            }
+        document.getElementById('checkingBalance').textContent = formatMoney(checkingBalance);
+        document.getElementById('bitcoinBalance').textContent = isNaN(btcValue) ? '$0.00' : formatMoney(btcValue);
+        document.getElementById('totalBalance').textContent = isNaN(total) ? '$0.00' : formatMoney(total);
+    }
 
-            checkingBalance -= amount;
-
-            const today = new Date();
-            const dateStr = (today.getMonth() + 1) + '/' + today.getDate();
-
-            transactions.unshift({
-                date: dateStr,
-                desc: desc,
-                amount: -amount, // negative for spend
-                balance: checkingBalance
-            });
-
-            updateDisplay();
-            renderHistory();
-
-            document.getElementById('amountInput').value = '';
-            document.getElementById('descInput').value = '';
-
-            showNotification('Purchase recorded! -' + formatMoney(amount));
-        }
-
-        function renderHistory() {
-            const historyList = document.getElementById('historyList');
-            historyList.innerHTML = '';
-
-            transactions.forEach(t => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-
-                const isPositive = t.amount > 0;
-                const sign = isPositive ? '+' : '-';
-                const amountClass = isPositive ? 'positive' : 'negative';
-
-                item.innerHTML = `
-                    <div class="history-left">
-                        <div class="history-date">${t.date}</div>
-                        <div class="history-desc">${t.desc}</div>
-                    </div>
-                    <div class="history-right">
-                        <div class="history-amount ${amountClass}">${sign}${formatMoney(t.amount)}</div>
-                        <div class="history-balance">Bal: ${formatMoney(t.balance)}</div>
-                    </div>
-                `;
-
-                historyList.appendChild(item);
-            });
-        }
-
-        // Initial render
-        renderHistory();
+    function updateBitcoinFromInputs() {
+        btcAmount = parseFloat(document.getElementById('btcAmount').value) || 0;
+        btcPrice  = parseFloat(document.getElementById('btcPrice').value) || 0;
         updateDisplay();
-        fetchBtcPrice();
-        setInterval(fetchBtcPrice, 30000);
-    </script>
-</body>
-</html>
+        saveState();
+    }
+
+    async function fetchBtcPrice() {
+        try {
+            const res = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
+            const data = await res.json();
+            const price = parseFloat(data.data.amount);
+            if (!isNaN(price)) {
+                btcPrice = price;
+                document.getElementById('btcPrice').value = price.toFixed(2);
+                const now = new Date();
+                btcMetaText.textContent = 'Live BTC price: ' + formatMoney(price) + ' • Updated ' + now.toLocaleTimeString();
+                updateDisplay();
+                saveState();
+            }
+        } catch (e) {
+            btcMetaText.textContent = 'Could not refresh BTC price right now.';
+        }
+    }
+
+    function showNotification(message) {
+        const notif = document.getElementById('notification');
+        notif.textContent = message;
+        notif.classList.add('show');
+        setTimeout(() => {
+            notif.classList.remove('show');
+        }, 2000);
+    }
+
+    function getAmountInput() {
+        const raw = document.getElementById('amountInput').value;
+        const amount = parseFloat(raw);
+        if (isNaN(amount)) return null;
+        return amount;
+    }
+
+    function addMoney() {
+        const amount = getAmountInput();
+        const desc = document.getElementById('descInput').value.trim();
+
+        if (amount === null || amount <= 0) {
+            showNotification('Please enter a valid amount');
+            return;
+        }
+        if (!desc) {
+            showNotification('Please enter a description');
+            return;
+        }
+
+        checkingBalance += amount;
+
+        const today = new Date();
+        const dateStr = (today.getMonth() + 1) + '/' + today.getDate();
+
+        transactions.unshift({
+            date: dateStr,
+            desc: desc,
+            amount: amount, // positive
+            balance: checkingBalance
+        });
+
+        updateDisplay();
+        renderHistory();
+        saveState();
+
+        document.getElementById('amountInput').value = '';
+        document.getElementById('descInput').value = '';
+
+        showNotification('Money added! +' + formatMoney(amount));
+    }
+
+    function spendMoney() {
+        const amount = getAmountInput();
+        const desc = document.getElementById('descInput').value.trim();
+
+        if (amount === null || amount <= 0) {
+            showNotification('Please enter a valid amount');
+            return;
+        }
+        if (!desc) {
+            showNotification('Please enter a description');
+            return;
+        }
+
+        if (amount > checkingBalance) {
+            showNotification('Not enough money in checking!');
+            return;
+        }
+
+        checkingBalance -= amount;
+
+        const today = new Date();
+        const dateStr = (today.getMonth() + 1) + '/' + today.getDate();
+
+        transactions.unshift({
+            date: dateStr,
+            desc: desc,
+            amount: -amount, // negative
+            balance: checkingBalance
+        });
+
+        updateDisplay();
+        renderHistory();
+        saveState();
+
+        document.getElementById('amountInput').value = '';
+        document.getElementById('descInput').value = '';
+
+        showNotification('Purchase recorded! -' + formatMoney(amount));
+    }
+
+    function renderHistory() {
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = '';
+
+        transactions.forEach(t => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+
+            const isPositive = t.amount > 0;
+            const sign = isPositive ? '+' : '-';
+            const amountClass = isPositive ? 'positive' : 'negative';
+
+            item.innerHTML = `
+                <div class="history-left">
+                    <div class="history-date">${t.date}</div>
+                    <div class="history-desc">${t.desc}</div>
+                </div>
+                <div class="history-right">
+                    <div class="history-amount ${amountClass}">${sign}${formatMoney(t.amount)}</div>
+                    <div class="history-balance">Bal: ${formatMoney(t.balance)}</div>
+                </div>
+            `;
+
+            historyList.appendChild(item);
+        });
+    }
+
+    // Initialize
+    loadState();
+    renderHistory();
+    updateDisplay();
+    fetchBtcPrice();
+    setInterval(fetchBtcPrice, 30000);
+</script>
